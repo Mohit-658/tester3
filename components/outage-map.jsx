@@ -10,11 +10,10 @@ import { db } from '@/lib/firebase';
 // Use the hardcoded token
 mapboxgl.accessToken = "pk.eyJ1IjoiaGl0bWFuMTMxMCIsImEiOiJjbWJzYXE0N20waGw0MnFxdGxzdThrd2V6In0.J4LGkO6DJWUuRoER09zorA";
 
-export default function OutageMap() {
+export default function OutageMap({ city }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [error, setError] = useState(null);
-  const [selectedCity, setSelectedCity] = useState('All');
   const [outages, setOutages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,10 +23,11 @@ export default function OutageMap() {
       try {
         setLoading(true);
         const outagesRef = collection(db, 'outageReports');
-        let q = outagesRef;
         
-        if (selectedCity !== 'All') {
-          q = query(outagesRef, where('city', '==', selectedCity));
+        // Create a query to filter by city if provided
+        let q = outagesRef;
+        if (city) {
+          q = query(outagesRef, where('city', '==', city));
         }
         
         const querySnapshot = await getDocs(q);
@@ -58,7 +58,7 @@ export default function OutageMap() {
     };
 
     fetchOutages();
-  }, [selectedCity]);
+  }, [city]); // Re-fetch when city changes
 
   // Initialize map
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function OutageMap() {
         <div class="p-2">
           <h3 class="font-bold text-lg">${outage.type}</h3>
           <p class="text-gray-700">${outage.description}</p>
-          <p class="text-sm text-gray-500 mt-1">Location: ${outage.city}</p>
+          <p class="text-sm text-gray-500 mt-1">Location: ${outage.locality || 'Not specified'}</p>
           <p class="text-sm text-gray-500">Reported: ${new Date(outage.timestamp).toLocaleString()}</p>
         </div>
       `);
@@ -176,17 +176,6 @@ export default function OutageMap() {
 
   return (
     <div className="bg-gray-100 rounded-lg h-[400px] relative overflow-hidden">
-      <div className="mb-2 flex gap-2 items-center">
-        <label htmlFor="citySelect" className="font-medium">Enter City:</label>
-        <input
-          id="citySelect"
-          type="text"
-          placeholder="e.g. Hyderabad, Delhi, Gwalior"
-          value={selectedCity}
-          onChange={(e) => setSelectedCity(e.target.value)}
-          className="border px-2 py-1 rounded-md"
-        />
-      </div>
       {loading && (
         <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
           <div className="text-center">
