@@ -25,6 +25,9 @@ const useSearchBoxCore = dynamic(
   { ssr: false }
 );
 
+const OutageMap = dynamic(() => import("@/components/outage-map"), {
+  ssr: false,
+});
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -218,32 +221,12 @@ export default function LandingPage() {
     setIsSignUpOpen(true)
   }
 
-  const handleLocationSubmit = () => {
-    try {
-      if (!location || !location.trim()) {
-        // Optional: Show error message to user
-        console.log("Please enter a location");
-        return;
-      }
-
-      // Reset all view states
-      setShowDashboard(false);
-      setShowReportForm(false);
-      setShowUpcomingOutages(false);
-      setShowAboutPage(false);
-      setShowContactPage(false);
-      setShowFaqPage(false);
-      
-      // Set the outage page
-      setShowOutagePage(true);
-      setCurrentPage("outages");
-      
-      // Optional: Scroll to top
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (error) {
-      console.error("Error handling location submit:", error);
-      // Optional: Show error message to user
-    }
+  const handleLocationSubmit = async () => {
+    if (!location) return;
+    
+    setShowOutagePage(true);
+    setCurrentPage("outages");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleBackToHome = () => {
@@ -2133,25 +2116,23 @@ export default function LandingPage() {
             </div>
 
             {/* View Toggle */}
-            <div className="bg-white rounded-lg p-2 inline-flex mb-6">
-              <button
+            <div className="flex items-center space-x-2 mb-6">
+              <Button
                 onClick={() => setViewMode("list")}
-                className={`px-4 py-2 rounded-md flex items-center ${
-                  viewMode === "list" ? "bg-[#4F46E5] text-white" : "text-gray-700 hover:bg-gray-100"
-                }`}
+                variant={viewMode === "list" ? "default" : "outline"}
+                className="flex items-center"
               >
                 <List className="w-4 h-4 mr-2" />
                 List View
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setViewMode("map")}
-                className={`px-4 py-2 rounded-md flex items-center ${
-                  viewMode === "map" ? "bg-[#4F46E5] text-white" : "text-gray-700 hover:bg-gray-100"
-                }`}
+                variant={viewMode === "map" ? "default" : "outline"}
+                className="flex items-center"
               >
                 <Map className="w-4 h-4 mr-2" />
                 Map View
-              </button>
+              </Button>
             </div>
 
             {/* Status Cards */}
