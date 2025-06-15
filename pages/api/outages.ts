@@ -1,13 +1,21 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, Query } from 'firebase/firestore';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { location, type } = req.query;
   try {
-    const q = query(collection(db, 'outages'), orderBy('timestamp', 'desc'));
+    let q: Query = collection(db, 'outages');
+    if (location) {
+      q = query(q, where('location', '==', location));
+    }
+    if (type) {
+      q = query(q, where('type', '==', type));
+    }
+    q = query(q, orderBy('timestamp', 'desc'));
     const snapshot = await getDocs(q);
     const outages = snapshot.docs.map(doc => ({
       id: doc.id,
