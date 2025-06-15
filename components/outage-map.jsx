@@ -5,31 +5,53 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Map } from 'lucide-react';
 
-// Make sure this token is set in your .env.local file
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+// Use the hardcoded token
+mapboxgl.accessToken = "pk.eyJ1IjoiaGl0bWFuMTMxMCIsImEiOiJjbWJzYXE0N20waGw0MnFxdGxzdThrd2V6In0.J4LGkO6DJWUuRoER09zorA";
 
 export default function OutageMap() {
   const mapContainer = useRef(null);
   const map = useRef(null);
-  const [outages, setOutages] = useState([]);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  // Fetch outages data
-  useEffect(() => {
-    setLoading(true);
-    fetch('/api/outages')
-      .then(res => res.json())
-      .then(data => {
-        console.log('Fetched outages:', data.outages);
-        setOutages(data.outages || []);
-      })
-      .catch(err => {
-        console.error('Error fetching outages:', err);
-        setError('Failed to fetch outage data');
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  // Static outage data for Indian cities
+  const staticOutages = [
+    {
+      id: 1,
+      type: "Power Outage",
+      description: "Scheduled maintenance in central area",
+      city: "Mumbai",
+      latitude: 19.0760,
+      longitude: 72.8777,
+      timestamp: new Date().toISOString()
+    },
+    {
+      id: 2,
+      type: "Water Supply",
+      description: "Emergency pipe repair affecting multiple areas",
+      city: "Delhi",
+      latitude: 28.6139,
+      longitude: 77.2090,
+      timestamp: new Date().toISOString()
+    },
+    {
+      id: 3,
+      type: "Internet Disruption",
+      description: "Fiber optic cable damage causing network issues",
+      city: "Bangalore",
+      latitude: 12.9716,
+      longitude: 77.5946,
+      timestamp: new Date().toISOString()
+    },
+    {
+      id: 4,
+      type: "Power Outage",
+      description: "Transformer failure in industrial area",
+      city: "Chennai",
+      latitude: 13.0827,
+      longitude: 80.2707,
+      timestamp: new Date().toISOString()
+    }
+  ];
 
   // Initialize map
   useEffect(() => {
@@ -45,8 +67,8 @@ export default function OutageMap() {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [78.1828, 26.2183], // Gwalior coordinates
-        zoom: 12
+        center: [78.9629, 22.5937], // Center of India
+        zoom: 4
       });
 
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -59,6 +81,33 @@ export default function OutageMap() {
 
       map.current.on('load', () => {
         console.log('Map loaded successfully');
+        
+        // Add markers for static outages
+        staticOutages.forEach(outage => {
+          const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+            <div class="p-2">
+              <h3 class="font-bold text-lg">${outage.type}</h3>
+              <p class="text-gray-700">${outage.description}</p>
+              <p class="text-sm text-gray-500 mt-1">Location: ${outage.city}</p>
+              <p class="text-sm text-gray-500">Reported: ${new Date(outage.timestamp).toLocaleString()}</p>
+            </div>
+          `);
+
+          // Create a custom marker element
+          const el = document.createElement('div');
+          el.className = 'outage-marker';
+          el.style.width = '24px';
+          el.style.height = '24px';
+          el.style.borderRadius = '50%';
+          el.style.backgroundColor = '#ef4444';
+          el.style.border = '2px solid white';
+          el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+
+          new mapboxgl.Marker(el)
+            .setLngLat([outage.longitude, outage.latitude])
+            .setPopup(popup)
+            .addTo(map.current);
+        });
       });
 
       return () => map.current?.remove();
@@ -67,35 +116,6 @@ export default function OutageMap() {
       setError('Failed to initialize map');
     }
   }, []);
-
-  // Add markers when outages data is available
-  useEffect(() => {
-    if (!map.current || !outages.length) return;
-
-    console.log('Adding markers for outages:', outages);
-
-    outages.forEach(outage => {
-      if (!outage.latitude || !outage.longitude) {
-        console.warn('Outage missing coordinates:', outage);
-        return;
-      }
-
-      try {
-        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-          <h3 class="font-bold">${outage.type}</h3>
-          <p>${outage.description}</p>
-          <p class="text-sm text-gray-500">Reported: ${outage.timestamp ? new Date(outage.timestamp).toLocaleString() : ''}</p>
-        `);
-
-        new mapboxgl.Marker()
-          .setLngLat([outage.longitude, outage.latitude])
-          .setPopup(popup)
-          .addTo(map.current);
-      } catch (err) {
-        console.error('Error adding marker:', err);
-      }
-    });
-  }, [outages]);
 
   if (error) {
     return (
@@ -107,28 +127,9 @@ export default function OutageMap() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="bg-gray-100 rounded-lg h-[400px] flex items-center justify-center">
-        <div className="text-center">
-          <p>Loading map...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-gray-100 rounded-lg h-[400px] relative overflow-hidden">
       <div ref={mapContainer} className="w-full h-full" />
-      {!outages.length && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-center bg-white/90 p-4 rounded-lg shadow-lg">
-            <Map className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">Interactive map showing outage locations in Gwalior</p>
-            <p className="text-sm text-gray-500 mt-2">Zoom in to see detailed information</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 
