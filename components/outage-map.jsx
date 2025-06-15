@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Map } from 'lucide-react';
@@ -11,9 +11,16 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 export default function OutageMap() {
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const [outages, setOutages] = useState([]);
 
   useEffect(() => {
-    if (map.current) return; // initialize map only once
+    fetch('/api/outages')
+      .then(res => res.json())
+      .then(data => setOutages(data.outages || []));
+  }, []);
+
+  useEffect(() => {
+    if (map.current) return;
     if (!mapContainer.current) return;
 
     map.current = new mapboxgl.Map({
@@ -29,6 +36,25 @@ export default function OutageMap() {
     // Clean up on unmount
     return () => map.current?.remove();
   }, []);
+
+  useEffect(() => {
+    if (!map.current || !outages.length) return;
+
+    outages.forEach(outage => {
+      if (!outage.latitude || !outage.longitude) return;
+
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+        <h3 class="font-bold">${outage.type}</h3>
+        <p>${outage.description}</p>
+        <p class="text-sm text-gray-500">Reported: ${outage.timestamp ? new Date(outage.timestamp).toLocaleString() : ''}</p>
+      `);
+
+      new mapboxgl.Marker()
+        .setLngLat([outage.longitude, outage.latitude])
+        .setPopup(popup)
+        .addTo(map.current);
+    });
+  }, [outages]);
 
   return (
     <div className="bg-gray-100 rounded-lg h-[400px] relative overflow-hidden">
