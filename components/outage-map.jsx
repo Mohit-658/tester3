@@ -31,10 +31,22 @@ export default function OutageMap() {
         }
         
         const querySnapshot = await getDocs(q);
-        const outageData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const outageData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          // Ensure coordinates are numbers
+          return {
+            id: doc.id,
+            ...data,
+            latitude: parseFloat(data.latitude) || 0,
+            longitude: parseFloat(data.longitude) || 0
+          };
+        }).filter(outage => 
+          // Filter out outages with invalid coordinates
+          !isNaN(outage.latitude) && 
+          !isNaN(outage.longitude) &&
+          outage.latitude !== 0 && 
+          outage.longitude !== 0
+        );
         
         setOutages(outageData);
       } catch (err) {
@@ -93,6 +105,15 @@ export default function OutageMap() {
 
     // Add new markers
     outages.forEach(outage => {
+      // Validate coordinates
+      const lat = parseFloat(outage.latitude);
+      const lng = parseFloat(outage.longitude);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        console.warn(`Invalid coordinates for outage ${outage.id}:`, { lat, lng });
+        return; // Skip this outage
+      }
+
       const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
         <div class="p-2">
           <h3 class="font-bold text-lg">${outage.type}</h3>
@@ -112,7 +133,7 @@ export default function OutageMap() {
       el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
 
       new mapboxgl.Marker(el)
-        .setLngLat([outage.longitude, outage.latitude])
+        .setLngLat([lng, lat])
         .setPopup(popup)
         .addTo(map.current);
     });
@@ -120,10 +141,26 @@ export default function OutageMap() {
     // Fit map to show all markers
     if (outages.length > 0) {
       const bounds = new mapboxgl.LngLatBounds();
+      let validMarkers = 0;
+      
       outages.forEach(outage => {
-        bounds.extend([outage.longitude, outage.latitude]);
+        const lat = parseFloat(outage.latitude);
+        const lng = parseFloat(outage.longitude);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          bounds.extend([lng, lat]);
+          validMarkers++;
+        }
       });
-      map.current.fitBounds(bounds, { padding: 50 });
+
+      // Only fit bounds if we have valid markers
+      if (validMarkers > 0) {
+        map.current.fitBounds(bounds, { padding: 50 });
+      } else {
+        // If no valid markers, center on India
+        map.current.setCenter([78.9629, 22.5937]);
+        map.current.setZoom(4);
+      }
     }
   }, [outages]);
 
