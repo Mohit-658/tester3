@@ -2219,6 +2219,16 @@ export default function LandingPage() {
                 <div className="h-[600px]">
                   <OutageMap />
                 </div>
+                <div className="mt-4 flex flex-wrap gap-4">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-700">Electricity Outages</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-700">Water Outages</span>
+                  </div>
+                </div>
               </div>
             )}
 
