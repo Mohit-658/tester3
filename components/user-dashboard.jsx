@@ -11,6 +11,10 @@ const SearchBox = dynamic(() => import("@mapbox/search-js-react").then(mod => mo
   ssr: false,
 });
 
+const OutageMap = dynamic(() => import("./outage-map"), {
+  ssr: false,
+});
+
 export default function UserDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("overview")
   const [showAddLocationModal, setShowAddLocationModal] = useState(false)
@@ -1245,6 +1249,890 @@ export default function UserDashboard({ user, onLogout }) {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Overview Tab Content
+  if (activeTab === "overview") {
+    return (
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border">
+          <h2 className="text-2xl font-bold text-[#1F2937]">Welcome back, {user?.displayName || "User"}!</h2>
+          <p className="text-gray-600 mt-2">Here's what's happening in your area</p>
+        </div>
+
+        {/* Map Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border">
+          <h2 className="text-xl font-semibold text-[#1F2937] mb-4">Outage Map</h2>
+          <OutageMap />
+        </div>
+
+        {/* Recent Reports Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-[#1F2937]">Your Recent Reports</h3>
+              <p className="text-gray-600 mt-1">View recent reports and maintenance updates</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[#4F46E5] hover:bg-[#4F46E5]/10"
+              onClick={() => setActiveTab("reports")}
+            >
+              View All
+            </Button>
+          </div>
+          {recentReports.length > 0 ? (
+            <div className="space-y-3">
+              {recentReports.slice(0, 2).map((report) => (
+                <div key={report.id} className="flex items-start space-x-3">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      report.type === "electricity" ? "bg-[#F59E0B]/20" : "bg-[#4F46E5]/20"
+                    }`}
+                  >
+                    {report.type === "electricity" ? (
+                      <Bell className={`w-4 h-4 text-[#F59E0B]`} />
+                    ) : (
+                      <Bell className={`w-4 h-4 text-[#4F46E5]`} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm">{report.location}</p>
+                        <span
+                          className={`text-xs px-1.5 py-0.5 rounded font-medium bg-blue-100 text-blue-700`}
+                        >
+                          User Report
+                        </span>
+                      </div>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          report.status === "resolved"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {report.status === "resolved" ? "Resolved" : "Pending"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">{report.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">You haven't reported any outages yet.</p>
+          )}
+        </div>
+
+        {/* Upcoming Outages Summary */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-[#1F2937]">Upcoming Outages</h3>
+              <p className="text-gray-600 mt-1">View scheduled outages and maintenance in your area</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[#4F46E5] hover:bg-[#4F46E5]/10"
+              onClick={() => setShowCalendarPage(true)}
+            >
+              View Calendar
+            </Button>
+          </div>
+          {upcomingOutages.length > 0 ? (
+            <div className="space-y-3">
+              {upcomingOutages.map((outage) => (
+                <div key={outage.id} className="flex items-start space-x-3">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      outage.type === "electricity" ? "bg-[#F59E0B]/20" : "bg-[#4F46E5]/20"
+                    }`}
+                  >
+                    <Calendar
+                      className={`w-4 h-4 ${
+                        outage.type === "electricity" ? "text-[#F59E0B]" : "text-[#4F46E5]"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1">
+                      <p className="font-medium text-sm">{outage.location}</p>
+                      <span
+                        className={`text-xs px-1.5 py-0.5 rounded-full ${
+                          outage.type === "electricity"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-indigo-100 text-indigo-700"
+                        }`}
+                      >
+                        {outage.type === "electricity" ? "Electricity" : "Water"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {outage.date} • {outage.time}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">No upcoming scheduled outages in your area.</p>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border">
+          <h3 className="font-semibold text-[#1F2937] mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center justify-center border-gray-300 hover:border-[#4F46E5] hover:text-[#4F46E5]"
+              onClick={() => setShowOutagesPage(true)}
+            >
+              <MapPin className="w-5 h-5 mb-2" />
+              <span className="text-xs">Check Outages</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center justify-center border-gray-300 hover:border-[#4F46E5] hover:text-[#4F46E5]"
+              onClick={handleReportNewOutage}
+            >
+              <AlertTriangle className="w-5 h-5 mb-2" />
+              <span className="text-xs">Report Outage</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center justify-center border-gray-300 hover:border-[#4F46E5] hover:text-[#4F46E5]"
+              onClick={() => setShowAddLocationModal(true)}
+            >
+              <MapPin className="w-5 h-5 mb-2" />
+              <span className="text-xs">Add Location</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center justify-center border-gray-300 hover:border-[#4F46E5] hover:text-[#4F46E5]"
+              onClick={() => setActiveTab("notifications")}
+            >
+              <Bell className="w-5 h-5 mb-2" />
+              <span className="text-xs">Manage Alerts</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center justify-center border-gray-300 hover:border-[#4F46E5] hover:text-[#4F46E5]"
+              onClick={() => setActiveTab("account")}
+            >
+              <Settings className="w-5 h-5 mb-2" />
+              <span className="text-xs">Settings</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // My Reports Tab
+  if (activeTab === "reports") {
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-[#1F2937]">My Reported Outages</h2>
+          <Button onClick={handleReportNewOutage} className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white">
+            Report New Outage
+          </Button>
+        </div>
+
+        {/* Filter Controls */}
+        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Type Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Type</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setReportFilters((prev) => ({ ...prev, type: "all" }))}
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    reportFilters.type === "all"
+                      ? "bg-[#4F46E5] text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setReportFilters((prev) => ({ ...prev, type: "electricity" }))}
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    reportFilters.type === "electricity"
+                      ? "bg-[#F59E0B] text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Electricity
+                </button>
+                <button
+                  onClick={() => setReportFilters((prev) => ({ ...prev, type: "water" }))}
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    reportFilters.type === "water"
+                      ? "bg-[#4F46E5] text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Water
+                </button>
+              </div>
+            </div>
+
+            {/* Severity Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Severity</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setReportFilters((prev) => ({ ...prev, severity: "all" }))}
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    reportFilters.severity === "all"
+                      ? "bg-[#4F46E5] text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setReportFilters((prev) => ({ ...prev, severity: "low" }))}
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    reportFilters.severity === "low"
+                      ? "bg-green-600 text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Low
+                </button>
+                <button
+                  onClick={() => setReportFilters((prev) => ({ ...prev, severity: "medium" }))}
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    reportFilters.severity === "medium"
+                      ? "bg-yellow-600 text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Medium
+                </button>
+                <button
+                  onClick={() => setReportFilters((prev) => ({ ...prev, severity: "high" }))}
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    reportFilters.severity === "high"
+                      ? "bg-red-600 text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  High
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Reports List */}
+        <div className="space-y-4">
+          {(() => {
+            // Enhanced mock data with severity levels
+            const enhancedReports = recentReports.map((report) => ({
+              ...report,
+              severity: report.id === 1 ? "high" : "medium", // Add severity to existing reports
+            }))
+
+            // Add more sample reports for better filtering demonstration
+            const allReports = [
+              ...enhancedReports,
+              {
+                id: 3,
+                type: "water",
+                location: "Sector 12, Block C",
+                date: "2023-05-25",
+                status: "resolved",
+                description: "Complete water supply disruption",
+                source: "crowdsourced",
+                severity: "high",
+              },
+              {
+                id: 4,
+                type: "electricity",
+                location: "Phase 1, Main Gate",
+                date: "2023-05-20",
+                status: "pending",
+                description: "Flickering lights in common areas",
+                source: "official",
+                severity: "low",
+              },
+            ]
+
+            // Filter reports based on selected filters
+            const filteredReports = allReports.filter((report) => {
+              const typeMatch = reportFilters.type === "all" || report.type === reportFilters.type
+              const severityMatch =
+                reportFilters.severity === "all" || report.severity === reportFilters.severity
+              return typeMatch && severityMatch
+            })
+
+            if (filteredReports.length === 0) {
+              return (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No Reports Found</h3>
+                  <p className="text-gray-500 mb-6">No reports match the selected filters.</p>
+                  <Button
+                    onClick={() => setReportFilters({ type: "all", severity: "all" })}
+                    variant="outline"
+                    className="border-[#4F46E5] text-[#4F46E5] hover:bg-[#4F46E5] hover:text-white"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              )
+            }
+
+            return filteredReports.map((report) => (
+              <div key={report.id} className="border rounded-lg p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        report.type === "electricity" ? "bg-[#F59E0B]/20" : "bg-[#4F46E5]/20"
+                      }`}
+                    >
+                      {report.type === "electricity" ? (
+                        <Bell className={`w-5 h-5 text-[#F59E0B]`} />
+                      ) : (
+                        <Bell className={`w-5 h-5 text-[#4F46E5]`} />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium">{report.location}</h3>
+                        <span className="text-xs px-2 py-1 rounded font-medium bg-blue-100 text-blue-700">
+                          User Report
+                        </span>
+                        <span
+                          className={`text-xs px-2 py-1 rounded font-medium ${
+                            report.severity === "high"
+                              ? "bg-red-100 text-red-700"
+                              : report.severity === "medium"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)} Priority
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{report.description}</p>
+                      <p className="text-xs text-gray-500 mt-2">Reported on {report.date}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      report.status === "resolved"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {report.status === "resolved" ? "Resolved" : "Pending"}
+                  </span>
+                </div>
+
+                {/* Expanded Details */}
+                {expandedReportId === report.id && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium text-sm text-gray-700 mb-2">Report Details</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Report ID:</span>
+                            <span className="font-medium">#{report.id.toString().padStart(6, "0")}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Type:</span>
+                            <span className="font-medium capitalize">{report.type}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Priority:</span>
+                            <span className="font-medium capitalize">{report.severity}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Affected Users:</span>
+                            <span className="font-medium">
+                              ~{report.severity === "high" ? "150" : report.severity === "medium" ? "75" : "25"}{" "}
+                              households
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm text-gray-700 mb-2">Timeline</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
+                            <div>
+                              <p className="font-medium">Report Submitted</p>
+                              <p className="text-gray-500 text-xs">{report.date} at 2:30 PM</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full mt-1.5"></div>
+                            <div>
+                              <p className="font-medium">Under Maintenance</p>
+                              <p className="text-gray-500 text-xs">{report.date} at 3:15 PM</p>
+                            </div>
+                          </div>
+                          {report.status === "resolved" && (
+                            <div className="flex items-start space-x-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5"></div>
+                              <div>
+                                <p className="font-medium">Issue Resolved</p>
+                                <p className="text-gray-500 text-xs">{report.date} at 5:45 PM</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <h4 className="font-medium text-sm text-gray-700 mb-2">Additional Information</h4>
+                      <p className="text-sm text-gray-600">
+                        {report.type === "electricity"
+                          ? "The power outage was caused by a transformer failure in the main distribution line. Our technical team has replaced the faulty equipment and restored power to all affected areas."
+                          : "The water pressure issue was due to maintenance work on the main pipeline. The work has been completed and normal water pressure has been restored."}
+                      </p>
+                    </div>
+
+                    {report.status === "pending" && (
+                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex items-center">
+                          <AlertTriangle className="w-4 h-4 text-yellow-600 mr-2" />
+                          <p className="text-sm text-yellow-800">
+                            <span className="font-medium">Estimated Resolution:</span>{" "}
+                            {report.severity === "high"
+                              ? "1-2 hours"
+                              : report.severity === "medium"
+                                ? "2-4 hours"
+                                : "4-6 hours"}{" "}
+                            from now
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    onClick={() => handleViewDetails(report.id)}
+                    variant="outline"
+                    size="sm"
+                    className="text-sm border-[#4F46E5] text-[#4F46E5] hover:bg-[#4F46E5] hover:text-white"
+                  >
+                    {expandedReportId === report.id ? "Hide Details" : "View Details"}
+                  </Button>
+                </div>
+              </div>
+            ))
+          })()}
+        </div>
+      </div>
+    )
+  }
+
+  // Saved Locations Tab
+  if (activeTab === "locations") {
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-[#1F2937]">Saved Locations</h2>
+          {/* Success Message */}
+          {locationSuccessMessage && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center">
+                <svg
+                  className="w-5 h-5 text-green-600 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-green-800 font-medium">{locationSuccessMessage}</p>
+              </div>
+            </div>
+          )}
+          <Button
+            onClick={() => setShowAddLocationModal(true)}
+            className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white"
+          >
+            Add New Location
+          </Button>
+        </div>
+
+        {savedLocations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {savedLocations.map((location) => (
+              <div key={location.id} className="border rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-10 h-10 bg-[#4F46E5]/10 rounded-full flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-[#4F46E5]" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium">{location.name}</h3>
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => handleEditLocation(location.id)}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          <svg
+                            className="w-4 h-4 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLocation(location.id)}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          <svg
+                            className="w-4 h-4 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{location.address}</p>
+                    <div className="mt-3 flex space-x-2">
+                      <Button
+                        onClick={() => handleViewOutages(location.id)}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        View Outages
+                      </Button>
+                      <Button
+                        onClick={() => handleSetAsDefault(location.id)}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Set as Default
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MapPin className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No Saved Locations</h3>
+            <p className="text-gray-500 mb-6">Add locations to quickly check for outages.</p>
+            <Button
+              onClick={() => setShowAddLocationModal(true)}
+              className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white"
+            >
+              Add Location
+            </Button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Notification Settings Tab
+  if (activeTab === "notifications") {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-[#1F2937] mb-6">Notification Settings</h2>
+
+        <div className="space-y-6">
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-[#4F46E5]/10 rounded-full flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-[#4F46E5]" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Browser Notifications</h3>
+                  <p className="text-sm text-gray-600">Receive alerts directly in your browser</p>
+                </div>
+              </div>
+              <div className="relative inline-block w-12 h-6 rounded-full bg-gray-200">
+                <input
+                  type="checkbox"
+                  className="opacity-0 w-0 h-0"
+                  checked={notificationSettings.browser}
+                  onChange={() => handleToggleNotification("browser")}
+                />
+                <span
+                  onClick={() => handleToggleNotification("browser")}
+                  className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-colors duration-200 ${
+                    notificationSettings.browser ? "bg-[#4F46E5]" : "bg-gray-300"
+                  }`}
+                ></span>
+                <span
+                  className={`absolute cursor-pointer w-4 h-4 top-1 bg-white rounded-full transition-transform duration-200 ${
+                    notificationSettings.browser ? "transform translate-x-7" : "transform translate-x-1"
+                  }`}
+                ></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-[#4F46E5]/10 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-[#4F46E5]" />
+                </div>
+                <div>
+                  <h3 className="font-medium">WhatsApp Notifications</h3>
+                  <p className="text-sm text-gray-600">Receive alerts via WhatsApp messages</p>
+                </div>
+              </div>
+              <div className="relative inline-block w-12 h-6 rounded-full bg-gray-200">
+                <input
+                  type="checkbox"
+                  className="opacity-0 w-0 h-0"
+                  checked={notificationSettings.whatsapp}
+                  onChange={() => handleToggleNotification("whatsapp")}
+                />
+                <span
+                  onClick={() => handleToggleNotification("whatsapp")}
+                  className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-colors duration-200 ${
+                    notificationSettings.whatsapp ? "bg-[#4F46E5]" : "bg-gray-300"
+                  }`}
+                ></span>
+                <span
+                  className={`absolute cursor-pointer w-4 h-4 top-1 bg-white rounded-full transition-transform duration-200 ${
+                    notificationSettings.whatsapp ? "transform translate-x-7" : "transform translate-x-1"
+                  }`}
+                ></span>
+              </div>
+            </div>
+            {notificationSettings.whatsapp && (
+              <div className="mt-3 pl-12">
+                <p className="text-sm text-gray-600">Connected number: +91 98765 43210</p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-[#4F46E5] p-0 h-auto text-sm"
+                  onClick={handleChangeWhatsAppNumber}
+                >
+                  Change Number
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-[#4F46E5]/10 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-[#4F46E5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium">Email Notifications</h3>
+                  <p className="text-sm text-gray-600">Receive alerts via email</p>
+                </div>
+              </div>
+              <div className="relative inline-block w-12 h-6 rounded-full bg-gray-200">
+                <input
+                  type="checkbox"
+                  className="opacity-0 w-0 h-0"
+                  checked={notificationSettings.email}
+                  onChange={() => handleToggleNotification("email")}
+                />
+                <span
+                  onClick={() => handleToggleNotification("email")}
+                  className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-colors duration-200 ${
+                    notificationSettings.email ? "bg-[#4F46E5]" : "bg-gray-300"
+                  }`}
+                ></span>
+                <span
+                  className={`absolute cursor-pointer w-4 h-4 top-1 bg-white rounded-full transition-transform duration-200 ${
+                    notificationSettings.email ? "transform translate-x-7" : "transform translate-x-1"
+                  }`}
+                ></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <Button
+            onClick={handleSaveNotificationSettings}
+            disabled={isSubmitting}
+            className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white"
+          >
+            {isSubmitting ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Account Settings Tab
+  if (activeTab === "account") {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-[#1F2937] mb-6">Account Settings</h2>
+
+        <div className="space-y-6">
+          {/* Profile Information */}
+          <div className="border rounded-lg p-6">
+            <h3 className="font-medium text-lg mb-4">Profile Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={user.name}
+                  className="w-full p-2 border rounded-md border-gray-300"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  value={user.email}
+                  className="w-full p-2 border rounded-md border-gray-300"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  placeholder="Add phone number"
+                  className="w-full p-2 border rounded-md border-gray-300"
+                />
+              </div>
+            </div>
+            {/* Update the Profile Information section to display the success message */}
+            <div className="mt-4">
+              <Button
+                onClick={handleUpdateProfile}
+                disabled={isSubmitting}
+                className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white"
+              >
+                {isSubmitting ? "Updating..." : "Update Profile"}
+              </Button>
+
+              {profileSuccessMessage && (
+                <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md">
+                  <div className="flex items-center">
+                    <svg
+                      className="w-4 h-4 text-green-600 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="text-sm text-green-800 font-medium">{profileSuccessMessage}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Change Password */}
+          <div className="border rounded-lg p-6">
+            <h3 className="font-medium text-lg mb-4">Change Password</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter current password"
+                  className="w-full p-2 border rounded-md border-gray-300"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter new password"
+                  className="w-full p-2 border rounded-md border-gray-300"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                <input
+                  type="password"
+                  placeholder="Confirm new password"
+                  className="w-full p-2 border rounded-md border-gray-300"
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button
+                onClick={handleChangePassword}
+                disabled={isSubmitting}
+                className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white"
+              >
+                {isSubmitting ? "Changing..." : "Change Password"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Delete Account */}
+          <div className="border border-red-200 rounded-lg p-6 bg-red-50">
+            <h3 className="font-medium text-lg text-red-700 mb-2">Delete Account</h3>
+            <p className="text-sm text-red-600 mb-4">
+              Once you delete your account, there is no going back. Please be certain.
+            </p>
+            <Button
+              onClick={handleDeleteAccount}
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete Account
+            </Button>
           </div>
         </div>
       </div>
