@@ -2135,15 +2135,7 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            {/* Map View */}
-            {viewMode === "map" && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border mb-8">
-                <h2 className="text-xl font-semibold text-[#1F2937] mb-4">Outage Map</h2>
-                <div className="h-[600px]">
-                  <OutageMap />
-                </div>
-              </div>
-            )}
+            
 
             {/* Status Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -2217,6 +2209,16 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+
+            {/* Map View */}
+            {viewMode === "map" && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border mb-8">
+                <h2 className="text-xl font-semibold text-[#1F2937] mb-4">Outage Map</h2>
+                <div className="h-[600px]">
+                  <OutageMap />
+                </div>
+              </div>
+            )}
 
             {/* Map or List View */}
             {viewMode === "map" ? (
