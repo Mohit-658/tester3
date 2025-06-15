@@ -15,6 +15,10 @@ const OutageMap = dynamic(() => import("./outage-map"), {
   ssr: false,
 });
 
+const TestOutageButton = dynamic(() => import("./test-outage-button"), {
+  ssr: false,
+});
+
 export default function UserDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("overview")
   const [showAddLocationModal, setShowAddLocationModal] = useState(false)
@@ -1269,6 +1273,7 @@ export default function UserDashboard({ user, onLogout }) {
         <div className="bg-white rounded-2xl p-6 shadow-sm border">
           <h2 className="text-xl font-semibold text-[#1F2937] mb-4">Outage Map</h2>
           <OutageMap />
+          <TestOutageButton />
         </div>
 
         {/* Recent Reports Section */}
