@@ -2116,23 +2116,25 @@ export default function LandingPage() {
             </div>
 
             {/* View Toggle */}
-            <div className="flex items-center space-x-2 mb-6">
-              <Button
+            <div className="bg-white rounded-lg p-2 inline-flex mb-6">
+              <button
                 onClick={() => setViewMode("list")}
-                variant={viewMode === "list" ? "default" : "outline"}
-                className="flex items-center"
+                className={`px-4 py-2 rounded-md flex items-center ${
+                  viewMode === "list" ? "bg-[#4F46E5] text-white" : "text-gray-700 hover:bg-gray-100"
+                }`}
               >
                 <List className="w-4 h-4 mr-2" />
                 List View
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => setViewMode("map")}
-                variant={viewMode === "map" ? "default" : "outline"}
-                className="flex items-center"
+                className={`px-4 py-2 rounded-md flex items-center ${
+                  viewMode === "map" ? "bg-[#4F46E5] text-white" : "text-gray-700 hover:bg-gray-100"
+                }`}
               >
                 <Map className="w-4 h-4 mr-2" />
                 Map View
-              </Button>
+              </button>
             </div>
 
             
